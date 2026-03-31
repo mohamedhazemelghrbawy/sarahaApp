@@ -1,0 +1,119 @@
+import mongoose from "mongoose";
+import {
+  roleEnum,
+  GenderEnum,
+  providerEnum,
+} from "../../common/enum/user.enum.js";
+// import { required } from "joi";
+
+const userSchema = new mongoose.Schema(
+  {
+    firstName: {
+      type: String,
+      // required: true,
+      minLength: 2,
+      maxLength: 20,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      // required: true,
+      minLength: 2,
+      maxLength: 20,
+      trim: true,
+    },
+    email: {
+      type: String,
+      // required: true,
+      unique: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: function () {
+        return this.provider == providerEnum.google ? false : true;
+      },
+      trim: true,
+    },
+    gender: {
+      type: String,
+      enum: Object.values(GenderEnum),
+      default: GenderEnum.male,
+    },
+    provider: {
+      type: String,
+      enum: Object.values(providerEnum),
+      default: providerEnum.system,
+    },
+    phone: {
+      type: String,
+      required: true,
+    },
+    profilePicture: {
+      secure_url: {
+        type: String,
+        // required: true,
+      },
+      public_id: {
+        type: String,
+        // required: true,
+      },
+    },
+    coverPicture: [
+      {
+        secure_url: {
+          type: String,
+          required: true,
+        },
+        public_id: {
+          type: String,
+        },
+      },
+    ],
+    confirmed: {
+      type: Boolean,
+      default: false,
+    },
+
+    twoStepVerification: {
+      type: Boolean,
+      default: false,
+    },
+    changeCredential: Date,
+    role: {
+      type: String,
+      enum: Object.values(roleEnum),
+      default: roleEnum.user,
+    },
+    visitCount: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+    strictQuery: true,
+  },
+);
+userSchema
+  .virtual("userName")
+  .get(function () {
+    return this.firstName + " " + this.lastName;
+  })
+  .set(function (v) {
+    const [firstName, lastName] = v.split(" ");
+    this.firstName = firstName;
+    this.lastName = lastName;
+  });
+
+userSchema.index(
+  { createdAt: 1 },
+  {
+    expireAfterSeconds: 60 * 60 * 24,
+    partialFilterExpression: { confirmed: false },
+  },
+);
+
+const userModel = mongoose.model("user", userSchema);
+
+export default userModel;
