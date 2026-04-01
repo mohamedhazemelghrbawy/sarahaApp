@@ -709,15 +709,28 @@ export const sendForgetPasswordLink = async (req, res, next) => {
   try {
     const { email } = req.body;
 
-    const user = await UserModel.findOne({ email });
+    const user = await db_service.findOne({
+      model: userModel,
+      filter: { email },
+    });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const payload = { id: user._id, email: user.email };
-    const secret_key = process.env.JWT_SECRET;
-    const options = { expiresIn: "15m" };
-    const token = GenerateToken({ payload, secret_key, options });
+    // const payload = { id: user._id, email: user.email };
+    // const secret_key = process.env.JWT_SECRET;
+    // const options = { expiresIn: "15m" };
+    // const token = GenerateToken({ payload, secret_key, options });
+
+    const jwtid = randomUUID();
+
+    if (!user.twoStepVerification) {
+      const access_token = GenerateToken({
+        payload: { id: user._id, email: user.email },
+        secret_key: SECRET_KEY,
+        options: { expiresIn: 60 * 20, jwtid },
+      });
+    }
 
     const resetLink = `http://16.171.130.107/reset-password?token=${token}`;
 
