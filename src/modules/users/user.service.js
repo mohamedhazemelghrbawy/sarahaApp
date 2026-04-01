@@ -728,10 +728,15 @@ export const sendForgetPasswordLink = async (req, res, next) => {
     const resetLink = `http://16.171.130.107/reset-password?token=${token}`;
 
     await sendEmail({
-      to: user.email,
+      to: email,
       subject: "Reset your password",
-      text: `Click this link to reset your password: ${resetLink}`,
+      html: `Click this link to reset your password: ${resetLink}`,
     });
+    //     await sendEmail({
+    //   to: user.email,
+    //   subject: "Welcome to Sara7a App",
+    //   html: emailTemplate(user.firstName, otp),
+    // });
 
     res.status(200).json({
       message: "Forget password link sent successfully",
