@@ -724,13 +724,11 @@ export const sendForgetPasswordLink = async (req, res, next) => {
 
     const jwtid = randomUUID();
 
-    if (!user.twoStepVerification) {
-      const access_token = GenerateToken({
-        payload: { id: user._id, email: user.email },
-        secret_key: SECRET_KEY,
-        options: { expiresIn: 60 * 20, jwtid },
-      });
-    }
+    const token = GenerateToken({
+      payload: { id: user._id, email: user.email },
+      secret_key: SECRET_KEY,
+      options: { expiresIn: 60 * 20, jwtid },
+    });
 
     const resetLink = `http://16.171.130.107/reset-password?token=${token}`;
 
