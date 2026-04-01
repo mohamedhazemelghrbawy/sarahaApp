@@ -717,11 +717,6 @@ export const sendForgetPasswordLink = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // const payload = { id: user._id, email: user.email };
-    // const secret_key = process.env.JWT_SECRET;
-    // const options = { expiresIn: "15m" };
-    // const token = GenerateToken({ payload, secret_key, options });
-
     const jwtid = randomUUID();
 
     const token = GenerateToken({
