@@ -76,7 +76,7 @@ userRouter.post("/send-forget-password", authentication, US.sendForgetOtp);
 
 userRouter.post("/forget-password", US.forgetPassword);
 
-userRouter.post("/sendLink-forget-password", US.sendForgetPasswordLink);
+userRouter.patch("/sendLink-forget-password", US.sendForgetPasswordLink);
 
 userRouter.patch(
   "/send-two-stepVerification-otp",
