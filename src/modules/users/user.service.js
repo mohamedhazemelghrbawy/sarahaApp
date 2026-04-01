@@ -59,9 +59,9 @@ export const signUp = async (req, res, next) => {
 
     const newImages = req.files?.attachments?.length || 0;
 
-    if (newImages !== 2) {
-      throw new Error("Cover pictures must be exactly 2");
-    }
+    // if (newImages !== 2) {
+    //   throw new Error("Cover pictures must be exactly 2");
+    // }
 
     const { secure_url, public_id } = await cloudinary.uploader.upload(
       req.files.attachment[0].path,
@@ -699,6 +699,57 @@ export const forgetPassword = async (req, res, next) => {
     successResponse({
       res,
       message: "Password reset successfully",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const sendForgetPasswordLink = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const user = await db_service.findOne({
+      model: userModel,
+      filter: { email },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = Hash({ plainText: rawToken });
+
+    const type = "forgetPasswordLink";
+
+    await setValue({
+      key: otp_key({ email, type }),
+      value: hashedToken,
+      ttl: 60 * 10,
+    });
+
+    const resetLink = `http://16.171.130.107/auth/reset-password-page?token=${rawToken}&email=${email}`;
+
+    await sendEmail({
+      to: email,
+      subject: "Reset Your Password",
+      html: `
+        <div style="font-family:Arial;padding:20px">
+          <h2>Hello ${user.userName}</h2>
+          <p>Click the button below to reset your password:</p>
+          <a href="${resetLink}" 
+             style="display:inline-block;padding:12px 20px;background:#007bff;color:white;text-decoration:none;border-radius:8px;">
+             Reset Password
+          </a>
+          <p style="margin-top:15px;">This link will expire in 10 minutes and can only be used once.</p>
+        </div>
+      `,
+    });
+
+    successResponse({
+      res,
+      message: "Reset password link sent successfully",
     });
   } catch (err) {
     next(err);
