@@ -709,50 +709,31 @@ export const sendForgetPasswordLink = async (req, res, next) => {
   try {
     const { email } = req.body;
 
-    const user = await db_service.findOne({
-      model: userModel,
-      filter: { email },
-    });
-
+    const user = await UserModel.findOne({ email });
     if (!user) {
-      throw new Error("User not found");
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = Hash({ plainText: rawToken });
+    const payload = { id: user._id, email: user.email };
+    const secret_key = process.env.JWT_SECRET;
+    const options = { expiresIn: "15m" };
+    const token = GenerateToken({ payload, secret_key, options });
 
-    const type = "forgetPasswordLink";
-
-    await setValue({
-      key: otp_key({ email, type }),
-      value: hashedToken,
-      ttl: 60 * 10,
-    });
-
-    const resetLink = `http://16.171.130.107/auth/reset-password-page?token=${rawToken}&email=${email}`;
+    const resetLink = `http://16.171.130.107/reset-password?token=${token}`;
 
     await sendEmail({
-      to: email,
-      subject: "Reset Your Password",
-      html: `
-        <div style="font-family:Arial;padding:20px">
-          <h2>Hello ${user.userName}</h2>
-          <p>Click the button below to reset your password:</p>
-          <a href="${resetLink}" 
-             style="display:inline-block;padding:12px 20px;background:#007bff;color:white;text-decoration:none;border-radius:8px;">
-             Reset Password
-          </a>
-          <p style="margin-top:15px;">This link will expire in 10 minutes and can only be used once.</p>
-        </div>
-      `,
+      to: user.email,
+      subject: "Reset your password",
+      text: `Click this link to reset your password: ${resetLink}`,
     });
 
-    successResponse({
-      res,
-      message: "Reset password link sent successfully",
+    res.status(200).json({
+      message: "Forget password link sent successfully",
+      resetLink,
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    console.error("Error in sendForgetPasswordLink:", error);
+    next(error);
   }
 };
 
